@@ -35,7 +35,7 @@ export const Stepper: React.FC = () => {
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-xs ${
                     active
-                      ? "bg-brand-ink text-white"
+                      ? "bg-brand-orange text-white"
                       : completed
                       ? "bg-brand-orange text-white"
                       : "border border-brand-border bg-brand-background text-brand-muted"
@@ -43,7 +43,7 @@ export const Stepper: React.FC = () => {
                 >
                   {step.step}
                 </span>
-                <span className={active ? "font-semibold text-brand-ink" : "group-hover:text-brand-ink"}>
+                <span className={active ? "font-semibold text-brand-ink" : "text-brand-muted"}>
                   {step.label}
                 </span>
               </button>
