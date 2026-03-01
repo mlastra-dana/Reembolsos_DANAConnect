@@ -13,7 +13,7 @@ export const ConfirmationPage: React.FC = () => {
 
   const handleNew = () => {
     dispatch({ type: "RESET" });
-    navigate("/auth");
+    navigate("/wizard/auth");
   };
 
   return (
@@ -21,15 +21,15 @@ export const ConfirmationPage: React.FC = () => {
       title="Preregistro enviado"
       description="Hemos recibido tu preregistro de reembolso."
     >
-      <div className="space-y-4 text-sm text-slate-800">
+      <div className="space-y-5 text-sm text-brand-ink">
         <p>
           Tu número de preregistro es:{" "}
-          <span className="font-semibold text-primary">
+          <span className="font-semibold text-brand-ink">
             {preRegistrationNumber ?? "—"}
           </span>
         </p>
         <p>Se ha enviado una confirmación por correo electrónico.</p>
-        <p className="text-xs text-slate-600">
+        <p className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-3 text-xs text-brand-muted">
           Conserva este número para hacer seguimiento de tu solicitud o para futuras consultas.
         </p>
         <div className="flex justify-end">
@@ -41,4 +41,3 @@ export const ConfirmationPage: React.FC = () => {
     </Card>
   );
 };
-

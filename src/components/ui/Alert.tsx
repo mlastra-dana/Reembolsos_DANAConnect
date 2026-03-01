@@ -9,12 +9,12 @@ interface AlertProps {
 
 export const Alert: React.FC<AlertProps> = ({ type = "info", title, message }) => {
   const base =
-    "flex gap-2 rounded-lg border px-3 py-2 text-sm items-start bg-white/80 backdrop-blur";
+    "flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm";
   const variants: Record<string, string> = {
-    info: "border-accent/40 text-slate-800",
-    success: "border-success/40 text-success",
-    warning: "border-warning/40 text-warning",
-    error: "border-error/40 text-error"
+    info: "border-brand-border bg-brand-surfaceSoft text-brand-ink",
+    success: "border-semantic-success/25 bg-semantic-success/5 text-semantic-success",
+    warning: "border-semantic-warning/25 bg-semantic-warning/5 text-semantic-warning",
+    error: "border-semantic-error/25 bg-semantic-error/5 text-semantic-error"
   };
 
   return (
@@ -27,4 +27,3 @@ export const Alert: React.FC<AlertProps> = ({ type = "info", title, message }) =
     </div>
   );
 };
-

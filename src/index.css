@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  accent-color: #DD5736;
+}
+
 html,
 body,
 #root {
@@ -9,10 +13,26 @@ body,
 }
 
 body {
-  @apply bg-background text-slate-900;
+  @apply bg-background text-brand-ink antialiased;
 }
 
 .app-container {
-  @apply min-h-screen flex flex-col;
+  @apply min-h-screen flex flex-col bg-brand-hero;
 }
 
+a,
+a:visited {
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #111827;
+  transition: background-color 9999s ease-in-out 0s;
+  box-shadow: 0 0 0 1000px #FFFFFF inset;
+}

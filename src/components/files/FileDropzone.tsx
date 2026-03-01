@@ -20,7 +20,7 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({ category, onFilesAdd
 
   return (
     <div
-      className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-xs text-slate-600 hover:border-primary/60 hover:bg-primary/5"
+      className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-brand-border bg-brand-surfaceSoft px-4 py-7 text-center text-xs text-brand-muted hover:border-brand-ink/35 hover:bg-brand-ink/5"
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
@@ -28,7 +28,7 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({ category, onFilesAdd
         handleFiles(e.dataTransfer.files);
       }}
     >
-      <p className="font-medium text-slate-700">Arrastra y suelta archivos aquí</p>
+      <p className="font-medium text-brand-ink">Arrastra y suelta archivos aquí</p>
       <p className="mt-1">
         o haz clic para seleccionar. Formatos permitidos: PDF, JPG, PNG.
       </p>

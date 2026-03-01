@@ -15,7 +15,7 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, onRemove }) => {
       : "Inválido";
   const statusColor =
     doc.status === "EN_VALIDACION"
-      ? "bg-accent/10 text-accent"
+      ? "bg-brand-ink/10 text-brand-ink"
       : doc.status === "VALIDO"
       ? "bg-success/10 text-success"
       : "bg-error/10 text-error";
@@ -28,10 +28,10 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, onRemove }) => {
       : "Evidencia adicional";
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-border bg-brand-surface px-3 py-2 text-xs">
       <div className="flex flex-1 flex-col">
-        <span className="truncate font-medium text-slate-800">{doc.name}</span>
-        <span className="text-[11px] text-slate-500">
+        <span className="truncate font-medium text-brand-ink">{doc.name}</span>
+        <span className="text-[11px] text-brand-muted">
           {categoryLabel} • {(doc.size / 1024).toFixed(1)} KB
         </span>
         {doc.errors.length > 0 && (
@@ -47,7 +47,7 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, onRemove }) => {
         <button
           type="button"
           onClick={onRemove}
-          className="text-[11px] text-slate-500 hover:text-error"
+          className="text-[11px] text-brand-muted hover:text-error"
         >
           Eliminar
         </button>

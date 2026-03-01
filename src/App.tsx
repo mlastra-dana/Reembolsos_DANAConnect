@@ -1,24 +1,23 @@
 import React from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Header } from "./components/layout/Header";
-import { Stepper } from "./components/Stepper";
 import { AuthPage } from "./pages/AuthPage";
 import { SelectInsuredPage } from "./pages/SelectInsuredPage";
 import { ClaimTypePage } from "./pages/ClaimTypePage";
 import { UploadDocumentsPage } from "./pages/UploadDocumentsPage";
 import { ReviewSubmitPage } from "./pages/ReviewSubmitPage";
 import { ConfirmationPage } from "./pages/ConfirmationPage";
+import { LandingPage } from "./pages/LandingPage";
 import { useSession } from "./store/WizardContext";
 import { isSessionExpired, clearSession as clearSessionStorage } from "./utils/sessionStorage";
 import { ToastProvider } from "./components/ui/ToastContext";
-import { Alert } from "./components/ui/Alert";
+import { AppShell } from "./components/layout/AppShell";
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { session, clear } = useSession();
   const location = useLocation();
 
   if (!session) {
-    return <Navigate to="/auth" replace state={{ from: location, reason: "no-session" }} />;
+    return <Navigate to="/wizard/auth" replace state={{ from: location, reason: "no-session" }} />;
   }
 
   if (isSessionExpired(session)) {
@@ -26,7 +25,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     clear();
     return (
       <Navigate
-        to="/auth"
+        to="/wizard/auth"
         replace
         state={{ from: location, reason: "expired" }}
       />
@@ -36,43 +35,28 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const location = useLocation();
-  const reason = (location.state as { reason?: string } | null)?.reason;
-
-  return (
-    <div className="app-container">
-      <Header />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">
-        <Stepper />
-        {reason === "expired" && (
-          <div className="mb-4">
-            <Alert
-              type="warning"
-              message="Tu sesión expiró. Por favor, inicia nuevamente."
-            />
-          </div>
-        )}
-        <div className="flex-1">{children}</div>
-      </main>
-    </div>
-  );
-};
-
 const App: React.FC = () => {
+  React.useEffect(() => {
+    document.title = "DANAconnect – Portal de preregistro de reembolsos (Demo)";
+  }, []);
+
   return (
     <ToastProvider>
       <Routes>
         <Route
           path="/"
           element={
-            <AppShell>
-              <Navigate to="/auth" replace />
+            <AppShell showStepper={false}>
+              <LandingPage />
             </AppShell>
           }
         />
         <Route
-          path="/auth"
+          path="/wizard"
+          element={<Navigate to="/wizard/auth" replace />}
+        />
+        <Route
+          path="/wizard/auth"
           element={
             <AppShell>
               <AuthPage />
@@ -80,7 +64,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/asegurado"
+          path="/wizard/asegurado"
           element={
             <AppShell>
               <ProtectedRoute>
@@ -90,7 +74,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/siniestro"
+          path="/wizard/siniestro"
           element={
             <AppShell>
               <ProtectedRoute>
@@ -100,7 +84,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/documentos"
+          path="/wizard/documentos"
           element={
             <AppShell>
               <ProtectedRoute>
@@ -110,7 +94,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/resumen"
+          path="/wizard/resumen"
           element={
             <AppShell>
               <ProtectedRoute>
@@ -120,7 +104,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/confirmacion"
+          path="/wizard/confirmacion"
           element={
             <AppShell>
               <ProtectedRoute>
@@ -129,11 +113,16 @@ const App: React.FC = () => {
             </AppShell>
           }
         />
-        <Route path="*" element={<Navigate to="/auth" replace />} />
+        <Route path="/auth" element={<Navigate to="/wizard/auth" replace />} />
+        <Route path="/asegurado" element={<Navigate to="/wizard/asegurado" replace />} />
+        <Route path="/siniestro" element={<Navigate to="/wizard/siniestro" replace />} />
+        <Route path="/documentos" element={<Navigate to="/wizard/documentos" replace />} />
+        <Route path="/resumen" element={<Navigate to="/wizard/resumen" replace />} />
+        <Route path="/confirmacion" element={<Navigate to="/wizard/confirmacion" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ToastProvider>
   );
 };
 
 export default App;
-

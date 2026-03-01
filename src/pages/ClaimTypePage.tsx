@@ -37,7 +37,7 @@ export const ClaimTypePage: React.FC = () => {
 
   const onSubmit = (data: FormValues) => {
     dispatch({ type: "SET_CLAIM_TYPE", payload: data.claimType });
-    navigate("/documentos");
+    navigate("/wizard/documentos");
   };
 
   return (
@@ -45,7 +45,7 @@ export const ClaimTypePage: React.FC = () => {
       title="Tipo de siniestro"
       description="Indica qué tipo de gastos deseas preregistrar."
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
         <RadioCardGroup
           name="claimType"
           value={selected}
@@ -57,11 +57,13 @@ export const ClaimTypePage: React.FC = () => {
           ]}
           error={errors.claimType?.message}
         />
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-3">
+          <Button type="button" variant="secondary" onClick={() => navigate("/wizard/asegurado")}>
+            Atrás
+          </Button>
           <Button type="submit">Continuar</Button>
         </div>
       </form>
     </Card>
   );
 };
-

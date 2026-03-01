@@ -49,7 +49,7 @@ export const AuthPage: React.FC = () => {
       dispatch({ type: "SET_SESSION", payload: session });
       setServerError(null);
       setLockoutMessage(null);
-      navigate("/asegurado");
+      navigate("/wizard/asegurado");
     },
     onError: (error: unknown) => {
       if (error instanceof LockoutError) {
@@ -78,7 +78,7 @@ export const AuthPage: React.FC = () => {
       title="Autenticación"
       description="Ingresa los datos de tu póliza para iniciar el preregistro de reembolso."
     >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
         <Input
           label="Número de póliza"
           placeholder="Ej. POL123456"
@@ -101,12 +101,8 @@ export const AuthPage: React.FC = () => {
             <p className="mt-1 text-xs text-error">{errors.captcha.message}</p>
           )}
         </div>
-        {serverError && (
-          <Alert type="error" message={serverError} />
-        )}
-        {lockoutMessage && (
-          <Alert type="warning" message={lockoutMessage} />
-        )}
+        {serverError && <Alert type="error" message={serverError} />}
+        {lockoutMessage && <Alert type="warning" message={lockoutMessage} />}
         <div className="flex justify-end">
           <Button type="submit" disabled={isPending}>
             {isPending ? "Verificando..." : "Continuar"}

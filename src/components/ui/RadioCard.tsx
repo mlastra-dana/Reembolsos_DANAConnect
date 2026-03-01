@@ -23,7 +23,7 @@ export const RadioCardGroup: React.FC<RadioCardGroupProps> = ({
   error
 }) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <div className="grid gap-3 sm:grid-cols-3">
         {options.map((opt) => {
           const selected = value === opt.value;
@@ -34,15 +34,15 @@ export const RadioCardGroup: React.FC<RadioCardGroupProps> = ({
               aria-pressed={selected}
               onClick={() => onChange(opt.value)}
               className={clsx(
-                "flex h-full flex-col items-start rounded-lg border p-3 text-left text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary",
+                "flex h-full flex-col items-start rounded-xl border p-4 text-left text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-brand-ink/25",
                 selected
-                  ? "border-primary bg-primary/5"
-                  : "border-slate-200 hover:border-primary/50 hover:bg-primary/5"
+                  ? "border-brand-ink bg-brand-ink/5"
+                  : "border-brand-border bg-brand-surface hover:border-brand-ink/25 hover:bg-brand-surfaceSoft"
               )}
             >
-              <span className="font-medium text-slate-900">{opt.label}</span>
+              <span className="font-medium text-brand-ink">{opt.label}</span>
               {opt.description && (
-                <span className="mt-1 text-xs text-slate-600">{opt.description}</span>
+                <span className="mt-1 text-xs text-brand-muted">{opt.description}</span>
               )}
             </button>
           );
@@ -53,4 +53,3 @@ export const RadioCardGroup: React.FC<RadioCardGroupProps> = ({
     </div>
   );
 };
-

@@ -30,7 +30,7 @@ export const SelectInsuredPage: React.FC = () => {
     if (!selectedInsured && data && data.length === 1) {
       dispatch({ type: "SET_INSURED", payload: data[0] });
     }
-    navigate("/siniestro");
+    navigate("/wizard/siniestro");
   };
 
   return (
@@ -38,7 +38,7 @@ export const SelectInsuredPage: React.FC = () => {
       title="Selecciona al asegurado"
       description="Elige a la persona para la cual registrarás el reembolso."
     >
-      {isLoading && <p className="text-sm text-slate-600">Cargando asegurados...</p>}
+      {isLoading && <p className="text-sm text-brand-muted">Cargando asegurados...</p>}
       {isError && (
         <div className="space-y-3">
           <Alert
@@ -51,7 +51,7 @@ export const SelectInsuredPage: React.FC = () => {
         </div>
       )}
       {data && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <ul className="space-y-2">
             {data.map((insured) => {
               const isSelected = selectedInsured?.id === insured.id;
@@ -60,17 +60,17 @@ export const SelectInsuredPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => dispatch({ type: "SET_INSURED", payload: insured })}
-                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary ${
+                    className={`flex w-full items-center justify-between rounded-xl border bg-brand-surface px-4 py-3 text-left text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-brand-ink/25 ${
                       isSelected
-                        ? "border-primary bg-primary/5"
-                        : "border-slate-200 hover:border-primary/60"
+                        ? "border-brand-ink bg-brand-ink/5"
+                        : "border-brand-border hover:border-brand-ink/30"
                     }`}
                   >
                     <div>
-                      <div className="font-medium text-slate-900">
+                      <div className="font-medium text-brand-ink">
                         {insured.maskedName} ({insured.relation})
                       </div>
-                      <div className="text-xs text-slate-600">
+                      <div className="text-xs text-brand-muted">
                         Rango de edad: {insured.ageRange}
                       </div>
                     </div>
@@ -79,7 +79,10 @@ export const SelectInsuredPage: React.FC = () => {
               );
             })}
           </ul>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <Button type="button" variant="secondary" onClick={() => navigate("/wizard/auth")}>
+              Atrás
+            </Button>
             <Button
               type="button"
               disabled={!selectedInsured && data.length > 1}
@@ -93,4 +96,3 @@ export const SelectInsuredPage: React.FC = () => {
     </Card>
   );
 };
-

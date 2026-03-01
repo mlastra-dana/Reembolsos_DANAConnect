@@ -38,7 +38,7 @@ export const ReviewSubmitPage: React.FC = () => {
     mutationFn: () => createPreRegistration({ session, insured: selectedInsured, claimType, documents }),
     onSuccess: (result) => {
       dispatch({ type: "SET_PRE_REG", payload: result.preRegistrationNumber });
-      navigate("/confirmacion");
+      navigate("/wizard/confirmacion");
     }
   });
 
@@ -60,23 +60,23 @@ export const ReviewSubmitPage: React.FC = () => {
         title="Revisión y envío"
         description="Verifica que la información sea correcta antes de enviar el preregistro."
       >
-        <div className="space-y-4 text-sm">
-          <section>
-            <h2 className="mb-1 text-xs font-semibold uppercase text-slate-500">
+        <div className="space-y-5 text-sm">
+          <section className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
               Asegurado
             </h2>
-            <p className="text-slate-800">
+            <p className="text-brand-ink">
               {selectedInsured
                 ? `${selectedInsured.maskedName} (${selectedInsured.relation})`
                 : "No disponible"}
             </p>
           </section>
 
-          <section>
-            <h2 className="mb-1 text-xs font-semibold uppercase text-slate-500">
+          <section className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
               Tipo de siniestro
             </h2>
-            <p className="text-slate-800">
+            <p className="text-brand-ink">
               {claimType === "GASTOS_MEDICOS"
                 ? "Gastos médicos"
                 : claimType === "EMERGENCIA"
@@ -87,18 +87,18 @@ export const ReviewSubmitPage: React.FC = () => {
             </p>
           </section>
 
-          <section className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase text-slate-500">
+          <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
               Documentos adjuntos
             </h2>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-brand-muted">
               Facturas: {summaryDocs.FACTURA.length} • Informe/receta:{" "}
               {summaryDocs.MEDICO.length} • Evidencia adicional:{" "}
               {summaryDocs.EVIDENCIA.length}
             </p>
             <ul className="space-y-1">
               {documents.map((doc) => (
-                <li key={doc.id} className="text-xs text-slate-700">
+                <li key={doc.id} className="text-xs text-brand-ink">
                   - {doc.name} ({doc.category}) –{" "}
                   {doc.status === "VALIDO"
                     ? "Válido"
@@ -117,7 +117,10 @@ export const ReviewSubmitPage: React.FC = () => {
             <Alert type="error" message={error.message} />
           )}
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <Button type="button" variant="secondary" onClick={() => navigate("/wizard/documentos")}>
+              Atrás
+            </Button>
             <Button type="button" disabled={!!disabledReason || isPending} onClick={handleSubmit}>
               Enviar preregistro
             </Button>
@@ -127,4 +130,3 @@ export const ReviewSubmitPage: React.FC = () => {
     </>
   );
 };
-

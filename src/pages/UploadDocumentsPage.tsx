@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useNavigate } from "react-router-dom";
 import { Card } from "../components/ui/Card";
 import { FileDropzone } from "../components/files/FileDropzone";
 import { FileItemRow } from "../components/files/FileItemRow";
@@ -18,6 +19,7 @@ export const UploadDocumentsPage: React.FC = () => {
     state: { documents },
     dispatch
   } = useWizard();
+  const navigate = useNavigate();
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const handleFilesAdded = (files: File[], category: DocumentCategory) => {
@@ -101,8 +103,8 @@ export const UploadDocumentsPage: React.FC = () => {
       description="Adjunta las facturas y documentos médicos necesarios para tu preregistro."
     >
       <div className="space-y-5">
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-slate-800">Facturas (obligatorio)</h2>
+        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+          <h2 className="text-sm font-semibold text-brand-ink">Facturas (obligatorio)</h2>
           <FileDropzone category="FACTURA" onFilesAdded={handleFilesAdded} />
           <div className="space-y-1">
             {grouped.FACTURA.map((doc) => (
@@ -115,8 +117,8 @@ export const UploadDocumentsPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-slate-800">
+        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+          <h2 className="text-sm font-semibold text-brand-ink">
             Informe / receta médica (obligatorio)
           </h2>
           <FileDropzone category="MEDICO" onFilesAdded={handleFilesAdded} />
@@ -131,8 +133,8 @@ export const UploadDocumentsPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-slate-800">
+        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+          <h2 className="text-sm font-semibold text-brand-ink">
             Evidencia adicional (opcional)
           </h2>
           <FileDropzone category="EVIDENCIA" onFilesAdded={handleFilesAdded} />
@@ -149,11 +151,14 @@ export const UploadDocumentsPage: React.FC = () => {
 
         {infoMessage && <Alert type="info" message={infoMessage} />}
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-3">
+          <Button type="button" variant="secondary" onClick={() => navigate("/wizard/siniestro")}>
+            Atrás
+          </Button>
           <Button
             type="button"
             disabled={!canContinue}
-            onClick={() => (window.location.href = "/resumen")}
+            onClick={() => navigate("/wizard/resumen")}
           >
             Continuar
           </Button>
@@ -162,4 +167,3 @@ export const UploadDocumentsPage: React.FC = () => {
     </Card>
   );
 };
-
