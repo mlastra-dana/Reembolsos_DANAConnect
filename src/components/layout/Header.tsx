@@ -1,12 +1,14 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "../../store/WizardContext";
 import { Button } from "../ui/Button";
 import logoDanaConnect from "../../assets/logo-danaconnect-horizontal.png";
 
 export const Header: React.FC = () => {
   const { clear } = useSession();
+  const location = useLocation();
   const navigate = useNavigate();
+  const showLogout = location.pathname.startsWith("/wizard");
 
   const handleLogout = () => {
     clear();
@@ -31,9 +33,15 @@ export const Header: React.FC = () => {
           </button>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button type="button" onClick={handleLogout} className="px-4 py-2 text-xs uppercase tracking-wide">
-            SALIR
-          </Button>
+          {showLogout && (
+            <Button
+              type="button"
+              onClick={handleLogout}
+              className="px-4 py-2 text-xs uppercase tracking-wide"
+            >
+              SALIR
+            </Button>
+          )}
         </div>
       </div>
     </header>
