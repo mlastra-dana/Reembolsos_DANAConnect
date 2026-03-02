@@ -2,10 +2,17 @@ import { CONFIG } from "../config";
 import type { DocumentCategory } from "../types";
 
 const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png"];
+const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
+
+export function getFileExtension(name: string): string {
+  const lower = name.toLowerCase();
+  const dot = lower.lastIndexOf(".");
+  return dot >= 0 ? lower.slice(dot) : "";
+}
 
 export function isAllowedFileType(file: File): boolean {
-  const lower = file.name.toLowerCase();
-  return allowedExtensions.some((ext) => lower.endsWith(ext));
+  const ext = getFileExtension(file.name);
+  return allowedMimeTypes.includes(file.type) || allowedExtensions.includes(ext);
 }
 
 export function isFileLargeEnough(file: File): boolean {

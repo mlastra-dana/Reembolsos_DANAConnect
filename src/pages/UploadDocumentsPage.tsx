@@ -9,6 +9,7 @@ import { Alert } from "../components/ui/Alert";
 import { useWizard } from "../store/WizardContext";
 import type { DocumentCategory, WizardDocument } from "../types";
 import {
+  getFileExtension,
   isAllowedFileType,
   isFileLargeEnough,
   isFileSmallEnough,
@@ -25,6 +26,9 @@ export const UploadDocumentsPage: React.FC = () => {
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const previewUrlsRef = useRef<Record<string, string>>({});
+
+  const formatKb = (bytes: number) => `${(bytes / 1024).toFixed(1)}KB`;
+  const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 
   const handleFilesAdded = (files: File[], category: DocumentCategory) => {
     const newDocs: WizardDocument[] = files.map((file) => ({
@@ -44,14 +48,22 @@ export const UploadDocumentsPage: React.FC = () => {
     pending.forEach((doc) => {
       const timeout = setTimeout(() => {
         const errors: string[] = [];
-        if (!isAllowedFileType(doc.file as File)) {
-          errors.push("Formato no permitido.");
+        const file = doc.file as File;
+        const ext = getFileExtension(doc.name) || "(sin extensión)";
+
+        if (!doc.name.trim() || file.size === 0) {
+          errors.push("Nombre vacío o archivo corrupto.");
         }
-        if (!isFileLargeEnough(doc.file as File)) {
-          errors.push("Este archivo no cumple el tamaño mínimo requerido.");
+        if (!isAllowedFileType(file)) {
+          errors.push(`Formato no permitido: ${ext} (solo PDF, JPG, PNG).`);
         }
-        if (!isFileSmallEnough(doc.file as File)) {
-          errors.push(`El archivo supera el tamaño máximo permitido (${CONFIG.fileMaxSizeMb} MB).`);
+        if (!isFileLargeEnough(file)) {
+          errors.push(
+            `Archivo muy pequeño: ${formatKb(file.size)} (mínimo ${CONFIG.fileMinSizeKb}KB).`
+          );
+        }
+        if (!isFileSmallEnough(file)) {
+          errors.push(`Archivo excede ${CONFIG.fileMaxSizeMb}MB: ${formatMb(file.size)}.`);
         }
         if (!isNameValidForCategory(doc.category, doc.name)) {
           errors.push(
@@ -137,12 +149,16 @@ export const UploadDocumentsPage: React.FC = () => {
     };
   }, [documents]);
 
+  const facturaInvalid = grouped.FACTURA.filter((d) => d.status === "INVALIDO");
+  const medicoInvalid = grouped.MEDICO.filter((d) => d.status === "INVALIDO");
   const evidenceInvalid = grouped.EVIDENCIA.filter((d) => d.status === "INVALIDO");
-  const evidenceAlertMessage =
-    evidenceInvalid.length > 0
-      ? evidenceInvalid[0].errors[0] ??
-        "Se detectaron archivos inválidos en Evidencia adicional. Verifica formato y tamaño."
+  const getSectionErrorSummary = (invalid: WizardDocument[], section: string) =>
+    invalid.length > 0
+      ? `Se rechazaron ${invalid.length} archivo(s) en ${section}. Revisa el detalle en cada fila.`
       : null;
+  const facturaAlertMessage = getSectionErrorSummary(facturaInvalid, "Facturas");
+  const medicoAlertMessage = getSectionErrorSummary(medicoInvalid, "Informe / receta médica");
+  const evidenceAlertMessage = getSectionErrorSummary(evidenceInvalid, "Evidencia adicional");
 
   return (
     <Card
@@ -153,6 +169,7 @@ export const UploadDocumentsPage: React.FC = () => {
         <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
           <h2 className="text-sm font-semibold text-brand-ink">Facturas (obligatorio)</h2>
           <FileDropzone category="FACTURA" onFilesAdded={handleFilesAdded} />
+          {facturaAlertMessage && <Alert type="error" message={facturaAlertMessage} />}
           <div className="space-y-1">
             {grouped.FACTURA.map((doc) => (
               <FileItemRow
@@ -170,6 +187,7 @@ export const UploadDocumentsPage: React.FC = () => {
             Informe / receta médica (obligatorio)
           </h2>
           <FileDropzone category="MEDICO" onFilesAdded={handleFilesAdded} />
+          {medicoAlertMessage && <Alert type="error" message={medicoAlertMessage} />}
           <div className="space-y-1">
             {grouped.MEDICO.map((doc) => (
               <FileItemRow
@@ -191,6 +209,7 @@ export const UploadDocumentsPage: React.FC = () => {
             laboratorio, informes médicos y cualquier soporte relacionado con el reembolso.
           </p>
           <FileDropzone category="EVIDENCIA" onFilesAdded={handleFilesAdded} />
+          {evidenceAlertMessage && <Alert type="error" message={evidenceAlertMessage} />}
           <div className="space-y-1">
             {grouped.EVIDENCIA.map((doc) => (
               <FileItemRow
@@ -201,7 +220,6 @@ export const UploadDocumentsPage: React.FC = () => {
               />
             ))}
           </div>
-          {evidenceAlertMessage && <Alert type="error" message={evidenceAlertMessage} />}
         </section>
 
         {infoMessage && <Alert type="info" message={infoMessage} />}
