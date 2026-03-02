@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
 import { Card } from "../components/ui/Card";
@@ -11,8 +11,10 @@ import type { DocumentCategory, WizardDocument } from "../types";
 import {
   isAllowedFileType,
   isFileLargeEnough,
+  isFileSmallEnough,
   isNameValidForCategory
 } from "../utils/fileValidators";
+import { CONFIG } from "../config";
 
 export const UploadDocumentsPage: React.FC = () => {
   const {
@@ -21,6 +23,8 @@ export const UploadDocumentsPage: React.FC = () => {
   } = useWizard();
   const navigate = useNavigate();
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const previewUrlsRef = useRef<Record<string, string>>({});
 
   const handleFilesAdded = (files: File[], category: DocumentCategory) => {
     const newDocs: WizardDocument[] = files.map((file) => ({
@@ -46,6 +50,9 @@ export const UploadDocumentsPage: React.FC = () => {
         if (!isFileLargeEnough(doc.file as File)) {
           errors.push("Este archivo no cumple el tamaño mínimo requerido.");
         }
+        if (!isFileSmallEnough(doc.file as File)) {
+          errors.push(`El archivo supera el tamaño máximo permitido (${CONFIG.fileMaxSizeMb} MB).`);
+        }
         if (!isNameValidForCategory(doc.category, doc.name)) {
           errors.push(
             "Este archivo no cumple los requisitos. Revisa el formato o intenta con uno más nítido."
@@ -66,6 +73,39 @@ export const UploadDocumentsPage: React.FC = () => {
       return () => clearTimeout(timeout);
     });
   }, [documents, dispatch]);
+
+  useEffect(() => {
+    setPreviewUrls((prev) => {
+      const next = { ...prev };
+      const ids = new Set(documents.map((d) => d.id));
+
+      Object.entries(next).forEach(([id, url]) => {
+        if (!ids.has(id)) {
+          URL.revokeObjectURL(url);
+          delete next[id];
+        }
+      });
+
+      documents.forEach((doc) => {
+        if (doc.file instanceof File && !next[doc.id]) {
+          next[doc.id] = URL.createObjectURL(doc.file);
+        }
+      });
+
+      return next;
+    });
+  }, [documents]);
+
+  useEffect(() => {
+    previewUrlsRef.current = previewUrls;
+  }, [previewUrls]);
+
+  useEffect(
+    () => () => {
+      Object.values(previewUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    },
+    []
+  );
 
   const hasFacturaValida = documents.some(
     (d) => d.category === "FACTURA" && d.status === "VALIDO"
@@ -97,6 +137,13 @@ export const UploadDocumentsPage: React.FC = () => {
     };
   }, [documents]);
 
+  const evidenceInvalid = grouped.EVIDENCIA.filter((d) => d.status === "INVALIDO");
+  const evidenceAlertMessage =
+    evidenceInvalid.length > 0
+      ? evidenceInvalid[0].errors[0] ??
+        "Se detectaron archivos inválidos en Evidencia adicional. Verifica formato y tamaño."
+      : null;
+
   return (
     <Card
       title="Carga de documentos"
@@ -111,6 +158,7 @@ export const UploadDocumentsPage: React.FC = () => {
               <FileItemRow
                 key={doc.id}
                 doc={doc}
+                previewUrl={previewUrls[doc.id]}
                 onRemove={() => dispatch({ type: "REMOVE_DOCUMENT", payload: { id: doc.id } })}
               />
             ))}
@@ -127,6 +175,7 @@ export const UploadDocumentsPage: React.FC = () => {
               <FileItemRow
                 key={doc.id}
                 doc={doc}
+                previewUrl={previewUrls[doc.id]}
                 onRemove={() => dispatch({ type: "REMOVE_DOCUMENT", payload: { id: doc.id } })}
               />
             ))}
@@ -137,16 +186,22 @@ export const UploadDocumentsPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-brand-ink">
             Evidencia adicional (opcional)
           </h2>
+          <p className="text-xs text-brand-muted">
+            Puedes agregar evidencia adicional como: ecografías, radiografías, exámenes de
+            laboratorio, informes médicos y cualquier soporte relacionado con el reembolso.
+          </p>
           <FileDropzone category="EVIDENCIA" onFilesAdded={handleFilesAdded} />
           <div className="space-y-1">
             {grouped.EVIDENCIA.map((doc) => (
               <FileItemRow
                 key={doc.id}
                 doc={doc}
+                previewUrl={previewUrls[doc.id]}
                 onRemove={() => dispatch({ type: "REMOVE_DOCUMENT", payload: { id: doc.id } })}
               />
             ))}
           </div>
+          {evidenceAlertMessage && <Alert type="error" message={evidenceAlertMessage} />}
         </section>
 
         {infoMessage && <Alert type="info" message={infoMessage} />}

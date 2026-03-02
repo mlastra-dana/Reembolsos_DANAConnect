@@ -13,6 +13,11 @@ export function isFileLargeEnough(file: File): boolean {
   return file.size >= minBytes;
 }
 
+export function isFileSmallEnough(file: File): boolean {
+  const maxBytes = CONFIG.fileMaxSizeMb * 1024 * 1024;
+  return file.size <= maxBytes;
+}
+
 export function isNameValidForCategory(category: DocumentCategory, name: string): boolean {
   // No bloquear por naming del archivo: usuarios suelen subir nombres genéricos
   // como IMG_1234, scan, etc. Mantenemos validaciones por tipo y tamaño.

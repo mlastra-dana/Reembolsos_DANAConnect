@@ -3,10 +3,23 @@ import type { WizardDocument } from "../../types";
 
 interface FileItemRowProps {
   doc: WizardDocument;
+  previewUrl?: string;
   onRemove: () => void;
 }
 
-export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, onRemove }) => {
+function formatFileSize(size: number): string {
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(size / 1024).toFixed(1)} KB`;
+}
+
+function getFileTypeLabel(doc: WizardDocument): string {
+  if (doc.file?.type) return doc.file.type;
+  const parts = doc.name.split(".");
+  const ext = parts.length > 1 ? parts.pop() : "";
+  return ext ? ext.toUpperCase() : "Archivo";
+}
+
+export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRemove }) => {
   const statusLabel =
     doc.status === "EN_VALIDACION"
       ? "En validación"
@@ -26,19 +39,48 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, onRemove }) => {
       : doc.category === "MEDICO"
       ? "Informe/receta"
       : "Evidencia adicional";
+  const isImage = !!doc.file?.type?.startsWith("image/");
+  const isPdf = doc.file?.type === "application/pdf" || doc.name.toLowerCase().endsWith(".pdf");
+  const pdfPreviewUrl = previewUrl ? `${previewUrl}#page=1&view=FitH` : "";
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-border bg-brand-surface px-3 py-2 text-xs">
-      <div className="flex flex-1 flex-col">
-        <span className="truncate font-medium text-brand-ink">{doc.name}</span>
-        <span className="text-[11px] text-brand-muted">
-          {categoryLabel} • {(doc.size / 1024).toFixed(1)} KB
-        </span>
-        {doc.errors.length > 0 && (
-          <span className="mt-1 text-[11px] text-error">
-            {doc.errors.join(" • ")}
+    <div className="flex flex-col gap-3 rounded-xl border border-brand-border bg-brand-surface p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-1 items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {isImage && previewUrl && (
+            <img
+              src={previewUrl}
+              alt={`Vista previa de ${doc.name}`}
+              className="h-44 w-full rounded-lg border border-brand-border bg-brand-surfaceSoft object-contain sm:h-52"
+            />
+          )}
+          {isPdf && previewUrl && (
+            <object
+              data={pdfPreviewUrl}
+              type="application/pdf"
+              className="h-44 w-full rounded-lg border border-brand-border bg-brand-surfaceSoft sm:h-52"
+            >
+              <div className="flex h-full items-center justify-center p-3">
+                <button
+                  type="button"
+                  onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
+                  className="text-[11px] font-medium text-brand-ink underline-offset-2 hover:underline"
+                >
+                  Ver documento
+                </button>
+              </div>
+            </object>
+          )}
+          <span className="truncate font-medium text-brand-ink">{doc.name}</span>
+          <span className="text-[11px] text-brand-muted">
+            {categoryLabel} • {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
           </span>
-        )}
+          {doc.errors.length > 0 && (
+            <span className="mt-1 block text-[11px] text-error">
+              {doc.errors.join(" • ")}
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor}`}>
@@ -55,4 +97,3 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, onRemove }) => {
     </div>
   );
 };
-
