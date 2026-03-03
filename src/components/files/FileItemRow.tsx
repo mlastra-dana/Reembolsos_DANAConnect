@@ -25,7 +25,7 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
       ? "En validación"
       : doc.status === "VALIDO"
       ? "Válido"
-      : "Rechazado";
+      : "Documento no corresponde";
   const statusColor =
     doc.status === "EN_VALIDACION"
       ? "bg-brand-ink/10 text-brand-ink"
@@ -73,6 +73,7 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
             {statusLabel}
           </span>
         </div>
+        {doc.errorDetail && <span className="mt-1 block text-[11px] text-error">{doc.errorDetail}</span>}
         <span className="mt-1 block text-[11px] text-brand-muted">
           {categoryLabel} • {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
         </span>

@@ -15,7 +15,36 @@ import {
   isFileSmallEnough,
   isNameValidForCategory
 } from "../utils/fileValidators";
+import { validateDocumentBySlot } from "../utils/documentValidation";
 import { CONFIG } from "../config";
+
+const getExpectedSlot = (category: DocumentCategory): "FACTURA" | "INFORME_RECETA" | "EVIDENCIA_ADICIONAL" => {
+  if (category === "FACTURA") return "FACTURA";
+  if (category === "MEDICO") return "INFORME_RECETA";
+  return "EVIDENCIA_ADICIONAL";
+};
+
+const getDemoExtractedText = (file: File, fallbackName: string): string => {
+  const maybeText = (file as File & {
+    extractedText?: unknown;
+    ocrText?: unknown;
+    text?: unknown;
+    content?: unknown;
+  });
+  if (typeof maybeText.extractedText === "string" && maybeText.extractedText.trim()) {
+    return maybeText.extractedText;
+  }
+  if (typeof maybeText.ocrText === "string" && maybeText.ocrText.trim()) {
+    return maybeText.ocrText;
+  }
+  if (typeof maybeText.text === "string" && maybeText.text.trim()) {
+    return maybeText.text;
+  }
+  if (typeof maybeText.content === "string" && maybeText.content.trim()) {
+    return maybeText.content;
+  }
+  return fallbackName;
+};
 
 export const UploadDocumentsPage: React.FC = () => {
   const {
@@ -38,7 +67,10 @@ export const UploadDocumentsPage: React.FC = () => {
       name: file.name,
       size: file.size,
       status: "EN_VALIDACION",
-      errors: []
+      errors: [],
+      extractedText: getDemoExtractedText(file, file.name),
+      detectedType: "INDETERMINADO",
+      errorDetail: null
     }));
     dispatch({ type: "ADD_DOCUMENTS", payload: newDocs });
   };
@@ -70,14 +102,21 @@ export const UploadDocumentsPage: React.FC = () => {
             "Este archivo no cumple los requisitos. Revisa el formato o intenta con uno más nítido."
           );
         }
-        const valid = errors.length === 0;
+        const validation = validateDocumentBySlot(
+          file,
+          doc.extractedText?.trim() ? doc.extractedText : getDemoExtractedText(file, doc.name),
+          getExpectedSlot(doc.category)
+        );
+        const valid = errors.length === 0 && validation.isValid;
         dispatch({
           type: "UPDATE_DOCUMENT",
           payload: {
             id: doc.id,
             patch: {
               status: valid ? "VALIDO" : "INVALIDO",
-              errors
+              errors,
+              detectedType: validation.detectedType,
+              errorDetail: validation.errorDetail
             }
           }
         });

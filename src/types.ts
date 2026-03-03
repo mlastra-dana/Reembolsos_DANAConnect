@@ -26,6 +26,9 @@ export interface WizardDocument {
   size: number;
   status: DocumentStatus;
   errors: string[];
+  extractedText?: string;
+  detectedType?: string;
+  errorDetail?: string | null;
 }
 
 export interface WizardState {
@@ -35,4 +38,3 @@ export interface WizardState {
   documents: WizardDocument[];
   preRegistrationNumber: string | null;
 }
-
