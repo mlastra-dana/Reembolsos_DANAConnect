@@ -25,7 +25,7 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
       ? "En validación"
       : doc.status === "VALIDO"
       ? "Válido"
-      : "Documento no corresponde";
+      : "Inválido";
   const statusColor =
     doc.status === "EN_VALIDACION"
       ? "bg-brand-ink/10 text-brand-ink"
