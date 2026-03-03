@@ -77,9 +77,6 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
         <span className="mt-1 block text-[11px] text-brand-muted">
           {categoryLabel} • {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
         </span>
-        {doc.errors.length > 0 && (
-          <span className="mt-1 block text-[11px] text-error">{doc.errors.join(" • ")}</span>
-        )}
         <div className="mt-2 flex items-center gap-3">
           {previewUrl && (
             <button

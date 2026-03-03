@@ -24,7 +24,7 @@ const getExpectedSlot = (category: DocumentCategory): "FACTURA" | "INFORME_RECET
   return "EVIDENCIA_ADICIONAL";
 };
 
-const getDemoExtractedText = (file: File, fallbackName: string): string => {
+const getDemoExtractedText = (file: File): string => {
   const maybeText = (file as File & {
     extractedText?: unknown;
     ocrText?: unknown;
@@ -43,7 +43,7 @@ const getDemoExtractedText = (file: File, fallbackName: string): string => {
   if (typeof maybeText.content === "string" && maybeText.content.trim()) {
     return maybeText.content;
   }
-  return fallbackName;
+  return "";
 };
 
 export const UploadDocumentsPage: React.FC = () => {
@@ -68,7 +68,7 @@ export const UploadDocumentsPage: React.FC = () => {
       size: file.size,
       status: "EN_VALIDACION",
       errors: [],
-      extractedText: getDemoExtractedText(file, file.name),
+      extractedText: getDemoExtractedText(file),
       detectedType: "INDETERMINADO",
       errorDetail: null
     }));
@@ -104,7 +104,7 @@ export const UploadDocumentsPage: React.FC = () => {
         }
         const validation = validateDocumentBySlot(
           file,
-          doc.extractedText?.trim() ? doc.extractedText : getDemoExtractedText(file, doc.name),
+          doc.extractedText?.trim() ? doc.extractedText : getDemoExtractedText(file),
           getExpectedSlot(doc.category)
         );
         const valid = errors.length === 0 && validation.isValid;

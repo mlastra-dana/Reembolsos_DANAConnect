@@ -17,68 +17,125 @@ function hasAny(text: string, keywords: string[]): boolean {
   return keywords.some((keyword) => text.includes(keyword));
 }
 
-function hasCurrency(text: string): boolean {
-  return /(^|[\s:])(\$|S\/|USD|EUR|BS|B\/\.|RD\$|MXN|COP|PEN)([\s\d]|$)/.test(text);
+function hasCurrencySymbol(text: string): boolean {
+  return /(^|[\s:])(\$|S\/|USD|EUR|BS|B\/\.|RD\$|MXN|COP|PEN|VES|ARS|CLP)([\s\d]|$)/.test(text);
 }
 
-function scoreFactura(text: string): number {
-  const groups = [
-    hasAny(text, ["FACTURA", "BOLETA", "RECIBO", "COMPROBANTE"]),
-    hasAny(text, ["TOTAL", "SUBTOTAL"]),
-    hasAny(text, ["RUC", "RIF", "NIT"]),
-    hasCurrency(text)
-  ];
-  return groups.filter(Boolean).length;
+function hasAmount(text: string): boolean {
+  return /\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})\b/.test(text);
 }
 
-function scoreInformeReceta(text: string): number {
-  const groups = [
-    hasAny(text, ["RECETA", "PRESCRIPCION", "INDICACIONES"]),
-    hasAny(text, ["DIAGNOSTICO", "INFORME"]),
-    hasAny(text, ["DR.", "DR ", "CMP", "COLEGIADO"]),
-    hasAny(text, ["PACIENTE", "NOMBRE DEL PACIENTE", "PACIENTE:"])
-  ];
-  return groups.filter(Boolean).length;
+function getFacturaSignals(text: string) {
+  const header = hasAny(text, [
+    "FACTURA",
+    "RECIBO",
+    "COMPROBANTE",
+    "N° DE CONTROL",
+    "NRO DE CONTROL",
+    "NO. DE CONTROL",
+    "FACTURA N°",
+    "FACTURA NRO",
+    "FACTURA N "
+  ]);
+  const fiscalId = hasAny(text, ["RIF", "RUC", "NIT", "CUIT"]);
+  const totals = hasAny(text, ["TOTAL A PAGAR", "TOTAL", "SUBTOTAL", "IVA", "ITBIS", "IGV"]);
+  const billingStructure = hasAny(text, [
+    "DESCRIPCION",
+    "FORMA DE PAGO",
+    "CONDICIONES DE PAGO",
+    "RECIBI CONFORME"
+  ]);
+  const honorarios = hasAny(text, ["HONORARIOS", "CONSULTA MEDICA", "SERVICIO PROFESIONAL"]);
+  const amount = hasAmount(text) || hasCurrencySymbol(text);
+
+  const positives = [header, fiscalId, totals, billingStructure, honorarios, amount].filter(Boolean)
+    .length;
+  const hasStrongBillingStructure =
+    (header && totals) || (totals && fiscalId && amount) || (header && fiscalId);
+
+  return {
+    header,
+    fiscalId,
+    totals,
+    billingStructure,
+    honorarios,
+    amount,
+    positives,
+    hasStrongBillingStructure
+  };
 }
 
-function scoreEvidencia(text: string): number {
-  const groups = [
-    hasAny(text, ["RADIOGRAFIA", "ECOGRAFIA", "ULTRASONIDO"]),
-    hasAny(text, ["LABORATORIO", "RESULTADO"]),
-    hasAny(text, ["RESONANCIA", "TOMOGRAFIA"]),
-    hasAny(text, ["HALLAZGOS"])
-  ];
-  return groups.filter(Boolean).length;
+function getInformeSignals(text: string) {
+  const diagnostico = hasAny(text, [
+    "DIAGNOSTICO",
+    "IMPRESION DIAGNOSTICA",
+    "PLAN",
+    "EVOLUCION"
+  ]);
+  const receta = hasAny(text, ["RECETA", "PRESCRIPCION", "INDICACIONES", "DOSIS", "TRATAMIENTO", "RP/"]);
+  const medico = hasAny(text, ["DR", "DRA", "FIRMA", "CMP", "COLEGIATURA", "COLEGIADO"]);
+  const patient = hasAny(text, ["PACIENTE", "NOMBRE DEL PACIENTE", "PACIENTE:"]);
+  const positives = [diagnostico, receta, medico, patient].filter(Boolean).length;
+
+  return { diagnostico, receta, medico, patient, positives };
 }
 
-function getDetectedType(text: string): ExpectedSlot | "INDETERMINADO" {
-  const factura = scoreFactura(text);
-  const informe = scoreInformeReceta(text);
-  const evidencia = scoreEvidencia(text);
-  const maxScore = Math.max(factura, informe, evidencia);
+function getEvidenciaSignals(text: string) {
+  const imageKeywords = hasAny(text, [
+    "RADIOGRAFIA",
+    "ECOGRAFIA",
+    "ULTRASONIDO",
+    "RESONANCIA",
+    "TOMOGRAFIA",
+    "RX",
+    "MRI",
+    "CT"
+  ]);
+  const laboratorio = hasAny(text, ["LABORATORIO", "RESULTADO", "HEMOGRAMA", "GLUCOSA"]);
+  const hallazgos = hasAny(text, ["HALLAZGOS", "CONCLUSION", "IMAGEN DIAGNOSTICA"]);
+  const labStructure = hasAny(text, ["VALOR", "REFERENCIA", "RANGO", "UNIDADES"]) ||
+    /\b(MG\/DL|G\/DL|MMOL\/L|UI\/L|%|X10\^?\d)\b/.test(text);
+  const positives = [imageKeywords, laboratorio, hallazgos, labStructure].filter(Boolean).length;
+  return { imageKeywords, laboratorio, hallazgos, labStructure, positives };
+}
 
-  if (maxScore <= 0) return "INDETERMINADO";
-  if (factura === maxScore && factura >= 2) return "FACTURA";
-  if (informe === maxScore && informe >= 2) return "INFORME_RECETA";
-  if (evidencia === maxScore && evidencia >= 1) return "EVIDENCIA_ADICIONAL";
+function getDetectedType(file: File, text: string): ExpectedSlot | "INDETERMINADO" {
+  const facturaSignals = getFacturaSignals(text);
+  const informeSignals = getInformeSignals(text);
+  const evidenciaSignals = getEvidenciaSignals(text);
+  const recetaOnlyPenalty = hasAny(text, [
+    "PRESCRIPCION",
+    "RECETA",
+    "INDICACIONES",
+    "DOSIS",
+    "TRATAMIENTO",
+    "RP/"
+  ]);
+
+  const facturaLikely =
+    facturaSignals.hasStrongBillingStructure ||
+    (facturaSignals.positives >= 3 && (!recetaOnlyPenalty || facturaSignals.totals || facturaSignals.header));
+  if (facturaLikely) return "FACTURA";
+
+  const hasBillingInText =
+    facturaSignals.totals || facturaSignals.header || (facturaSignals.fiscalId && facturaSignals.amount);
+  const informeLikely = informeSignals.positives >= 2 && !hasBillingInText;
+  if (informeLikely) return "INFORME_RECETA";
+
+  const isImage = file.type.startsWith("image/");
+  const evidenciaLikely =
+    !hasBillingInText &&
+    (isImage || evidenciaSignals.positives >= 1 || (evidenciaSignals.laboratorio && evidenciaSignals.labStructure));
+  if (evidenciaLikely) return "EVIDENCIA_ADICIONAL";
+
   return "INDETERMINADO";
 }
 
-function hasFilenameClue(filename: string, slot: ExpectedSlot): boolean {
-  const normalized = normalizeText(filename);
-  const bySlot: Record<ExpectedSlot, string[]> = {
-    FACTURA: ["FACTURA", "BOLETA", "RECIBO", "COMPROBANTE", "TICKET", "PAGO"],
-    INFORME_RECETA: ["INFORME", "RECETA", "PRESCRIP", "MEDICO", "ORDEN"],
-    EVIDENCIA_ADICIONAL: ["RX", "RADIO", "ECOGRAF", "ULTRA", "LAB", "RESULTADO", "RESONANC", "TOMOGRAF"]
-  };
-  return hasAny(normalized, bySlot[slot]);
-}
-
 function getSlotErrorDetail(slot: ExpectedSlot): string {
-  if (slot === "FACTURA") return "No contiene palabras clave de factura.";
+  if (slot === "FACTURA") return "El documento no corresponde a una factura válida.";
   if (slot === "INFORME_RECETA")
-    return "No contiene palabras clave de informe o receta médica.";
-  return "No contiene palabras clave de evidencia médica adicional.";
+    return "El documento no corresponde a un informe o receta médica.";
+  return "El documento no corresponde a evidencia médica adicional.";
 }
 
 export function validateDocumentBySlot(
@@ -87,26 +144,9 @@ export function validateDocumentBySlot(
   expectedSlot: ExpectedSlot
 ): ValidationResult {
   const text = normalizeText(extractedText || "");
-  const detectedType = getDetectedType(text);
-  const filenameClue = hasFilenameClue(file.name, expectedSlot);
-  const textWordCount = text.trim().split(/\s+/).filter(Boolean).length;
-  const textIsScarce = textWordCount < 6;
+  const detectedType = getDetectedType(file, text);
 
-  const isExpectedByText =
-    (expectedSlot === "FACTURA" && scoreFactura(text) >= 2) ||
-    (expectedSlot === "INFORME_RECETA" && scoreInformeReceta(text) >= 2) ||
-    (expectedSlot === "EVIDENCIA_ADICIONAL" && scoreEvidencia(text) >= 1);
-
-  if (isExpectedByText) {
-    return {
-      isValid: true,
-      detectedType: expectedSlot,
-      errorDetail: null
-    };
-  }
-
-  // Modo demo tolerante: aceptar cuando hay poco texto pero nombre de archivo da pista
-  if (textIsScarce && filenameClue && (detectedType === "INDETERMINADO" || detectedType === expectedSlot)) {
+  if (detectedType === expectedSlot) {
     return {
       isValid: true,
       detectedType: expectedSlot,
