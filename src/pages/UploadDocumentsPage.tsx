@@ -15,14 +15,15 @@ import {
   isFileSmallEnough,
   isNameValidForCategory
 } from "../utils/fileValidators";
-import { validateDocumentBySlot } from "../utils/documentValidation";
+import { validateForSlot } from "../validation/validate";
+import type { Slot } from "../validation/types";
 import { CONFIG } from "../config";
 import { CLAIM_REQUIREMENTS } from "../config/claimRequirements";
 
-const getExpectedSlot = (category: DocumentCategory): "FACTURA" | "INFORME_RECETA" | "EVIDENCIA_ADICIONAL" => {
+const getExpectedSlot = (category: DocumentCategory): Slot => {
   if (category === "FACTURA") return "FACTURA";
   if (category === "MEDICO") return "INFORME_RECETA";
-  return "EVIDENCIA_ADICIONAL";
+  return "EVIDENCIA";
 };
 
 const getDemoExtractedText = (file: File): string => {
@@ -106,11 +107,7 @@ export const UploadDocumentsPage: React.FC = () => {
               "Este archivo no cumple los requisitos. Revisa el formato o intenta con uno más nítido."
             );
           }
-          const validation = await validateDocumentBySlot(
-            file,
-            doc.extractedText?.trim() ? doc.extractedText : getDemoExtractedText(file),
-            getExpectedSlot(doc.category)
-          );
+          const validation = await validateForSlot(file, getExpectedSlot(doc.category));
           const valid = errors.length === 0 && validation.isValid;
           dispatch({
             type: "UPDATE_DOCUMENT",
@@ -119,8 +116,8 @@ export const UploadDocumentsPage: React.FC = () => {
               patch: {
                 status: valid ? "VALIDO" : "INVALIDO",
                 errors,
-                detectedType: validation.detectedType,
-                errorDetail: validation.errorDetail
+                detectedType: validation.docType,
+                errorDetail: validation.message ?? null
               }
             }
           });

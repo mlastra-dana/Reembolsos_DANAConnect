@@ -22,7 +22,7 @@ function getFileTypeLabel(doc: WizardDocument): string {
 export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRemove }) => {
   const statusLabel =
     doc.status === "EN_VALIDACION"
-      ? "En validación"
+      ? "Validando..."
       : doc.status === "VALIDO"
       ? "Válido"
       : "Inválido";
@@ -70,6 +70,9 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="truncate font-medium text-brand-ink">{doc.name}</span>
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor}`}>
+            {doc.status === "EN_VALIDACION" && (
+              <span className="mr-1 inline-block h-2.5 w-2.5 animate-spin rounded-full border border-brand-ink border-t-transparent align-[-1px]" />
+            )}
             {statusLabel}
           </span>
         </div>
