@@ -2,6 +2,7 @@ import { normalizeForValidation } from "./extractText";
 import { analyzeCanvas, analyzeImage } from "./imageSignals";
 import type { DocType } from "./types";
 import { renderPdfFirstPageToCanvas } from "./extractText";
+import { extractPdfText } from "./extractText";
 
 export type ClassifyResult = {
   docType: DocType;
@@ -146,10 +147,12 @@ export async function classifyDocument(file: File): Promise<ClassifyResult> {
   const isImage = file.type.startsWith("image/");
 
   if (isPdf) {
-    const rawText = await file.text().catch(() => "");
-    const normalizedText = normalizeForValidation(rawText || extractEmbeddedTextHint(file));
-    const text = normalizedText || extractEmbeddedTextHint(file);
-    if (text.length >= 150) {
+    const rawText = normalizeForValidation(await file.text().catch(() => ""));
+    const extractedPdfText = await extractPdfText(file);
+    const hintedText = extractEmbeddedTextHint(file);
+    const text = [extractedPdfText, rawText, hintedText].sort((a, b) => b.length - a.length)[0] ?? "";
+
+    if (text.length >= 80) {
       applyPdfScores(text, scores);
       const textDocType = decideTextPriorityDocType(scores);
       if (textDocType !== "UNKNOWN") {
