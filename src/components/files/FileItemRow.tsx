@@ -33,12 +33,6 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
       ? "bg-success/10 text-success"
       : "bg-error/10 text-error";
 
-  const categoryLabel =
-    doc.category === "FACTURA"
-      ? "Factura"
-      : doc.category === "MEDICO"
-      ? "Informe/receta"
-      : "Evidencia adicional";
   const isImage = !!doc.file?.type?.startsWith("image/");
   const isPdf = doc.file?.type === "application/pdf" || doc.name.toLowerCase().endsWith(".pdf");
   const pdfPreviewUrl = previewUrl ? `${previewUrl}#page=1&view=FitH` : "";
@@ -78,7 +72,7 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({ doc, previewUrl, onRem
         </div>
         {doc.errorDetail && <span className="mt-1 block text-[11px] text-error">{doc.errorDetail}</span>}
         <span className="mt-1 block text-[11px] text-brand-muted">
-          {categoryLabel} • {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
+          {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
         </span>
         <div className="mt-2 flex items-center gap-3">
           {previewUrl && (

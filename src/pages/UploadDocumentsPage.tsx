@@ -59,6 +59,11 @@ export const UploadDocumentsPage: React.FC = () => {
   const previewUrlsRef = useRef<Record<string, string>>({});
   const activeClaimType = claimType ?? "GASTOS_MEDICOS";
   const requirements = CLAIM_REQUIREMENTS[activeClaimType];
+  const slotHints = {
+    FACTURA: "Sube facturas, recibos u honorarios médicos (PDF, JPG, PNG).",
+    INFORME_RECETA: "Sube informe o receta médica (PDF, JPG, PNG).",
+    EVIDENCIA_ADICIONAL: "Sube exámenes o resultados médicos (PDF, JPG, PNG)."
+  };
 
   const formatKb = (bytes: number) => `${(bytes / 1024).toFixed(1)}KB`;
   const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
@@ -213,14 +218,7 @@ export const UploadDocumentsPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-brand-ink">
             {requirements.slots.FACTURA.title} ({requirements.slots.FACTURA.required ? "obligatorio" : "opcional"})
           </h2>
-          <p className="text-xs text-brand-muted">{requirements.slots.FACTURA.helperText}</p>
-          {requirements.slots.FACTURA.examples.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-xs text-brand-muted">
-              {requirements.slots.FACTURA.examples.map((example) => (
-                <li key={example}>{example}</li>
-              ))}
-            </ul>
-          )}
+          <p className="text-xs text-brand-muted">{slotHints.FACTURA}</p>
           <FileDropzone category="FACTURA" onFilesAdded={handleFilesAdded} />
           {facturaAlertMessage && <Alert type="error" message={facturaAlertMessage} />}
           <div className="space-y-1">
@@ -239,14 +237,7 @@ export const UploadDocumentsPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-brand-ink">
             {requirements.slots.INFORME_RECETA.title} ({requirements.slots.INFORME_RECETA.required ? "obligatorio" : "opcional"})
           </h2>
-          <p className="text-xs text-brand-muted">{requirements.slots.INFORME_RECETA.helperText}</p>
-          {requirements.slots.INFORME_RECETA.examples.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-xs text-brand-muted">
-              {requirements.slots.INFORME_RECETA.examples.map((example) => (
-                <li key={example}>{example}</li>
-              ))}
-            </ul>
-          )}
+          <p className="text-xs text-brand-muted">{slotHints.INFORME_RECETA}</p>
           <FileDropzone category="MEDICO" onFilesAdded={handleFilesAdded} />
           {medicoAlertMessage && <Alert type="error" message={medicoAlertMessage} />}
           <div className="space-y-1">
@@ -265,14 +256,7 @@ export const UploadDocumentsPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-brand-ink">
             {requirements.slots.EVIDENCIA_ADICIONAL.title} ({requirements.slots.EVIDENCIA_ADICIONAL.required ? "obligatorio" : "opcional"})
           </h2>
-          <p className="text-xs text-brand-muted">{requirements.slots.EVIDENCIA_ADICIONAL.helperText}</p>
-          {requirements.slots.EVIDENCIA_ADICIONAL.examples.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-xs text-brand-muted">
-              {requirements.slots.EVIDENCIA_ADICIONAL.examples.map((example) => (
-                <li key={example}>{example}</li>
-              ))}
-            </ul>
-          )}
+          <p className="text-xs text-brand-muted">{slotHints.EVIDENCIA_ADICIONAL}</p>
           <FileDropzone category="EVIDENCIA" onFilesAdded={handleFilesAdded} />
           {evidenceAlertMessage && <Alert type="error" message={evidenceAlertMessage} />}
           <div className="space-y-1">

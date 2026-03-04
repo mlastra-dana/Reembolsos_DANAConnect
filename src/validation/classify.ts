@@ -76,6 +76,8 @@ function scorePdfText(text: string): Scores {
   }
   const rxInstructionHits = countMatches(text, [
     "darle",
+    "tomar",
+    "tomar ",
     "tableta",
     "tabletas",
     "capsula",
@@ -86,7 +88,10 @@ function scorePdfText(text: string): Scores {
     "pm",
     "cada"
   ]);
-  if (rxInstructionHits >= 3) {
+  if (rxInstructionHits >= 2) {
+    scores.informe += 5;
+  }
+  if (includesAny(text, ["dra.", "dr.", "medico psiquiatra", "medico pediatra"])) {
     scores.informe += 3;
   }
 
