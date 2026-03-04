@@ -31,7 +31,11 @@ export async function validateForSlot(file: File, slot: Slot): Promise<Validatio
   const isValid =
     (slot === "FACTURA" && docType === "FACTURA") ||
     (slot === "INFORME_RECETA" && docType === "INFORME_RECETA") ||
-    (slot === "EVIDENCIA" && (docType === "EVIDENCIA" || evidenceFallbackValid));
+    // EVIDENCIA en modo demo: solo bloquea cruces claros (factura o informe/receta).
+    (slot === "EVIDENCIA" &&
+      (docType === "EVIDENCIA" ||
+        evidenceFallbackValid ||
+        (docType !== "FACTURA" && docType !== "INFORME_RECETA")));
 
   if (isValid) return { isValid: true, docType };
   return { isValid: false, docType, message: invalidMessage(slot) };

@@ -13,6 +13,10 @@ type Scores = {
   evidencia: number;
 };
 
+type ScoreContext = {
+  hasFacturaAnchor: boolean;
+};
+
 function includesAny(text: string, terms: string[]): boolean {
   return terms.some((term) => text.includes(term));
 }
@@ -63,12 +67,14 @@ function hasRepeatedAmounts(text: string): boolean {
   return (withCurrency?.length ?? 0) >= 2;
 }
 
-function scorePdfText(text: string): Scores {
+function scorePdfText(text: string): Scores & ScoreContext {
   const scores: Scores = { factura: 0, informe: 0, evidencia: 0 };
+  let hasFacturaAnchor = false;
 
   // FACTURA
   if (includesAnyWholeWord(text, ["factura", "boleta", "comprobante", "recibo"])) {
     scores.factura += 3;
+    hasFacturaAnchor = true;
   }
   if (
     includesAnyWholeWord(text, ["subtotal"]) ||
@@ -79,7 +85,10 @@ function scorePdfText(text: string): Scores {
   }
   if (includesAnyWholeWord(text, ["ruc", "rif", "nit", "cuit"])) scores.factura += 2;
   if (includesAnyWholeWord(text, ["iva", "igv", "itbis"])) scores.factura += 2;
-  if (includesAny(text, ["honorarios", "honorarios medicos"])) scores.factura += 2;
+  if (includesAny(text, ["honorarios", "honorarios medicos"])) {
+    scores.factura += 2;
+    hasFacturaAnchor = true;
+  }
   if (hasRepeatedAmounts(text)) scores.factura += 1;
 
   // INFORME / RECETA
@@ -165,11 +174,11 @@ function scorePdfText(text: string): Scores {
     scores.evidencia += 2;
   }
 
-  return scores;
+  return { ...scores, hasFacturaAnchor };
 }
 
-function decideFromPdfScores(scores: Scores): DocType {
-  if (scores.factura >= 4) return "FACTURA";
+function decideFromPdfScores(scores: Scores & ScoreContext): DocType {
+  if ((scores.hasFacturaAnchor && scores.factura >= 4) || scores.factura >= 7) return "FACTURA";
   if (scores.informe >= 4) return "INFORME_RECETA";
   if (scores.evidencia >= 4) return "EVIDENCIA";
   return "UNKNOWN";
