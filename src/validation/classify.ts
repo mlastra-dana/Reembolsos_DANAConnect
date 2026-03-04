@@ -17,6 +17,19 @@ function includesAny(text: string, terms: string[]): boolean {
   return terms.some((term) => text.includes(term));
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function includesWholeWord(text: string, term: string): boolean {
+  const regex = new RegExp(`\\b${escapeRegExp(term)}\\b`, "i");
+  return regex.test(text);
+}
+
+function includesAnyWholeWord(text: string, terms: string[]): boolean {
+  return terms.some((term) => includesWholeWord(text, term));
+}
+
 function countMatches(text: string, terms: string[]): number {
   return terms.reduce((count, term) => (text.includes(term) ? count + 1 : count), 0);
 }
@@ -54,10 +67,18 @@ function scorePdfText(text: string): Scores {
   const scores: Scores = { factura: 0, informe: 0, evidencia: 0 };
 
   // FACTURA
-  if (includesAny(text, ["factura", "boleta", "comprobante", "recibo"])) scores.factura += 3;
-  if (includesAny(text, ["total", "total a pagar", "subtotal"])) scores.factura += 2;
-  if (includesAny(text, ["ruc", "rif", "nit", "cuit"])) scores.factura += 2;
-  if (includesAny(text, ["iva", "igv", "itbis"])) scores.factura += 2;
+  if (includesAnyWholeWord(text, ["factura", "boleta", "comprobante", "recibo"])) {
+    scores.factura += 3;
+  }
+  if (
+    includesAnyWholeWord(text, ["subtotal"]) ||
+    includesAny(text, ["total a pagar"]) ||
+    /\btotal\b\s*[:$0-9]/i.test(text)
+  ) {
+    scores.factura += 2;
+  }
+  if (includesAnyWholeWord(text, ["ruc", "rif", "nit", "cuit"])) scores.factura += 2;
+  if (includesAnyWholeWord(text, ["iva", "igv", "itbis"])) scores.factura += 2;
   if (includesAny(text, ["honorarios", "honorarios medicos"])) scores.factura += 2;
   if (hasRepeatedAmounts(text)) scores.factura += 1;
 
@@ -96,13 +117,51 @@ function scorePdfText(text: string): Scores {
   }
 
   // EVIDENCIA
-  if (includesAny(text, ["resultado", "examen", "laboratorio"])) scores.evidencia += 3;
-  if (includesAny(text, ["valores de referencia", "rango"])) scores.evidencia += 2;
-  if (includesAny(text, ["mg/dl", "g/dl", "mmol", "%", "u/l"])) scores.evidencia += 2;
-  if (includesAny(text, ["radiografia", "ecografia", "mamografia", "tac", "resonancia"])) {
+  if (
+    includesAny(text, [
+      "resultado",
+      "resultados",
+      "examen",
+      "examenes",
+      "laboratorio",
+      "hemograma",
+      "hematologia",
+      "sanguineo",
+      "sanguinea"
+    ])
+  ) {
+    scores.evidencia += 4;
+  }
+  if (includesAny(text, ["valores de referencia", "valor de referencia", "rango", "referencia"])) {
     scores.evidencia += 2;
   }
-  if (includesAny(text, ["reporte", "analisis", "composicion corporal", "inbody"])) {
+  if (includesAny(text, ["mg/dl", "g/dl", "mmol", "%", "u/l", "ui/l"])) scores.evidencia += 2;
+  if (
+    includesAny(text, [
+      "radiografia",
+      "rayos x",
+      "rx",
+      "ecografia",
+      "ultrasonido",
+      "mamografia",
+      "tac",
+      "tomografia",
+      "resonancia",
+      "torax"
+    ])
+  ) {
+    scores.evidencia += 3;
+  }
+  if (
+    includesAny(text, [
+      "reporte",
+      "analisis",
+      "composicion corporal",
+      "inbody",
+      "hallazgos",
+      "conclusion"
+    ])
+  ) {
     scores.evidencia += 2;
   }
 
@@ -122,6 +181,28 @@ function applyVisualScores(
 ) {
   if (signals.darkRatio > 0.45 && signals.avgBrightness < 150) {
     scores.evidencia += 4;
+  }
+  if (signals.darkRatio > 0.28 && signals.avgBrightness < 185) {
+    scores.evidencia += 3;
+  }
+  if (
+    signals.avgBrightness >= 85 &&
+    signals.avgBrightness <= 180 &&
+    signals.darkRatio >= 0.18 &&
+    signals.darkRatio <= 0.55 &&
+    signals.edgeDensity >= 0.03 &&
+    signals.edgeDensity <= 0.22
+  ) {
+    scores.evidencia += 3;
+  }
+  if (
+    signals.avgBrightness >= 90 &&
+    signals.avgBrightness <= 190 &&
+    signals.darkRatio >= 0.12 &&
+    signals.edgeDensity >= 0.02 &&
+    signals.edgeDensity <= 0.24
+  ) {
+    scores.evidencia += 3;
   }
   if (signals.edgeDensity > 0.2) {
     scores.evidencia += 3;
@@ -152,15 +233,39 @@ function applyVisualScores(
   ) {
     scores.informe += 2;
   }
-  // Receta manuscrita con mayor densidad de trazo: debe inclinarse a INFORME_RECETA.
+  // Receta manuscrita de trazo medio: mantiene tolerancia sin robarse reportes de evidencia.
   if (
-    signals.avgBrightness > 155 &&
-    signals.edgeDensity > 0.2 &&
-    signals.edgeDensity <= 0.38 &&
+    signals.avgBrightness > 160 &&
+    signals.edgeDensity >= 0.12 &&
+    signals.edgeDensity <= 0.2 &&
     signals.darkRatio >= 0.03 &&
-    signals.darkRatio <= 0.25
+    signals.darkRatio <= 0.18
   ) {
-    scores.informe += 5;
+    scores.informe += 3;
+  }
+}
+
+function applyPdfVisualEvidenceOnly(
+  signals: { avgBrightness: number; darkRatio: number; edgeDensity: number },
+  scores: Scores
+) {
+  if (signals.darkRatio > 0.45 && signals.avgBrightness < 150) {
+    scores.evidencia += 4;
+  }
+  if (signals.darkRatio > 0.28 && signals.avgBrightness < 185) {
+    scores.evidencia += 3;
+  }
+  if (
+    signals.avgBrightness >= 85 &&
+    signals.avgBrightness <= 190 &&
+    signals.darkRatio >= 0.1 &&
+    signals.edgeDensity >= 0.02 &&
+    signals.edgeDensity <= 0.32
+  ) {
+    scores.evidencia += 3;
+  }
+  if (signals.edgeDensity > 0.18) {
+    scores.evidencia += 3;
   }
 }
 
@@ -173,7 +278,7 @@ function applyFilenameSupport(fileName: string, scores: Scores) {
     scores.informe += 1;
   }
   if (includesAny(normalized, ["rx", "eco", "mamo", "lab", "resultado", "estudio", "inbody", "reporte"])) {
-    scores.evidencia += 1;
+    scores.evidencia += 2;
   }
 }
 
@@ -202,16 +307,8 @@ export async function classifyDocument(file: File): Promise<ClassifyResult> {
 
   if (isPdf) {
     const pdfNativeText = await extractPdfText(file);
-    const pdfTextRaw = await file.text().catch(() => "");
     const hintText = extractEmbeddedTextHint(file);
-    const rawNormalized = normalizeForValidation(pdfTextRaw);
-    const looksLikePdfSyntax =
-      rawNormalized.includes("pdf-") ||
-      rawNormalized.includes("endobj") ||
-      rawNormalized.includes("stream") ||
-      rawNormalized.includes("xref") ||
-      rawNormalized.includes("trailer");
-    const text = pdfNativeText || (looksLikePdfSyntax ? "" : rawNormalized) || hintText;
+    const text = pdfNativeText || hintText;
 
     if (text.length >= 120) {
       canUseFilenameSupport = false;
@@ -225,11 +322,11 @@ export async function classifyDocument(file: File): Promise<ClassifyResult> {
       const canvas = await renderPdfFirstPageToCanvas(file);
       if (canvas) {
         const signals = await analyzeCanvas(canvas);
-        applyVisualScores(signals, scores);
+        applyPdfVisualEvidenceOnly(signals, scores);
       }
       try {
         const ocrText = await ocrPdfFirstPage(file);
-        if (ocrText.length >= 40) {
+        if (ocrText.length >= 20) {
           const ocrScores = scorePdfText(ocrText);
           scores.factura += ocrScores.factura;
           scores.informe += ocrScores.informe;
