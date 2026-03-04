@@ -68,6 +68,9 @@ function scorePdfText(text: string): Scores {
   if (includesAny(text, ["receta", "rp", "orden medica"])) scores.informe += 2;
   if (includesAny(text, ["paciente"])) scores.informe += 1;
   if (includesAny(text, ["dr", "dra", "medico", "firma", "sello"])) scores.informe += 1;
+  if (includesAny(text, ["psiquiatra", "pediatra", "dermatologo", "oftalmologo", "especialista"])) {
+    scores.informe += 2;
+  }
   if (includesAny(text, ["tableta", "tabletas", "capsula", "capsulas", "gotas", "cada", "am", "pm"])) {
     scores.informe += 1;
   }
@@ -234,9 +237,9 @@ export async function classifyDocument(file: File): Promise<ClassifyResult> {
   } else if (isImage) {
     const signals = await analyzeImage(file);
     applyVisualScores(signals, scores);
-    try {
-      const ocrText = await ocrImage(file);
-      if (ocrText.length >= 40) {
+      try {
+        const ocrText = await ocrImage(file);
+      if (ocrText.length >= 10) {
         const ocrScores = scorePdfText(ocrText);
         scores.factura += ocrScores.factura;
         scores.informe += ocrScores.informe;
