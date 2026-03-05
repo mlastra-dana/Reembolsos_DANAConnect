@@ -68,10 +68,84 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({
       : doc.status === "INVALIDO"
       ? "bg-error"
       : "bg-brand-ink";
+  const uploadProgress = 100;
+  const validationProgress = doc.status === "EN_VALIDACION" ? progress : 100;
 
   const isImage = !!doc.file?.type?.startsWith("image/");
   const isPdf = doc.file?.type === "application/pdf" || doc.name.toLowerCase().endsWith(".pdf");
   const pdfPreviewUrl = previewUrl ? `${previewUrl}#page=1&view=FitH` : "";
+  const isAccepted = doc.status === "VALIDO";
+
+  if (isAccepted) {
+    return (
+      <div className="rounded-xl border border-success/40 bg-success/5 p-3 shadow-sm">
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-success/40 bg-success/10 p-3">
+          <div
+            className="h-20 w-28 overflow-hidden rounded-lg border border-brand-border bg-white sm:h-24 sm:w-32"
+            onClick={() =>
+              previewUrl &&
+              (onPreview
+                ? onPreview(doc, previewUrl)
+                : window.open(previewUrl, "_blank", "noopener,noreferrer"))
+            }
+          >
+            {isImage && previewUrl && (
+              <img
+                src={previewUrl}
+                alt={`Vista previa de ${doc.name}`}
+                className="h-full w-full object-contain"
+              />
+            )}
+            {isPdf && previewUrl && (
+              <object data={pdfPreviewUrl} type="application/pdf" className="h-full w-full">
+                <div className="flex h-full items-center justify-center text-[11px] text-brand-muted">
+                  PDF
+                </div>
+              </object>
+            )}
+            {!isImage && !isPdf && (
+              <div className="flex h-full items-center justify-center text-[11px] text-brand-muted">
+                Archivo
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <span className="truncate text-lg font-semibold text-brand-ink">Archivo: {doc.name}</span>
+              <button
+                type="button"
+                onClick={onRemove}
+                aria-label={`Eliminar ${doc.name}`}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-brand-border text-2xl leading-none text-brand-muted transition hover:text-error"
+              >
+                ×
+              </button>
+            </div>
+            <span className="mt-1 block text-[11px] text-brand-muted">
+              {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
+            </span>
+            {previewUrl && (
+              <button
+                type="button"
+                onClick={() =>
+                  onPreview
+                    ? onPreview(doc, previewUrl)
+                    : window.open(previewUrl, "_blank", "noopener,noreferrer")
+                }
+                className="mt-2 text-[11px] font-medium text-brand-ink underline-offset-2 hover:underline"
+              >
+                Ver
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="mt-2 flex items-center gap-2 text-lg font-medium text-success">
+          <span aria-hidden>✓</span>
+          Documento aceptado.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-start gap-3 rounded-xl border border-brand-border bg-brand-surface p-3 text-xs shadow-sm transition hover:border-brand-ink/20 hover:shadow-md">
@@ -110,11 +184,31 @@ export const FileItemRow: React.FC<FileItemRowProps> = ({
         <span className="mt-1 block text-[11px] text-brand-muted">
           {formatFileSize(doc.size)} • {getFileTypeLabel(doc)}
         </span>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-brand-border/50">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ease-out ${progressBarColor}`}
-            style={{ width: `${progress}%` }}
-          />
+        <div className="mt-2 rounded-lg border border-brand-border/70 bg-brand-surfaceSoft/70 p-2">
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[11px] text-brand-muted">
+              <span>Subida</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand-border/50">
+              <div
+                className="h-full rounded-full bg-brand-ink/70 transition-all duration-500 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+          <div className="mt-2">
+            <div className="mb-1 flex items-center justify-between text-[11px] text-brand-muted">
+              <span>Validación</span>
+              <span>{validationProgress}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand-border/50">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ease-out ${progressBarColor}`}
+                style={{ width: `${validationProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
         <div className="mt-2 flex items-center gap-3">
           {previewUrl && (
