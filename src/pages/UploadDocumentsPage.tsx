@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
 import { Card } from "../components/ui/Card";
@@ -54,9 +54,11 @@ export const UploadDocumentsPage: React.FC = () => {
     dispatch
   } = useWizard();
   const navigate = useNavigate();
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const previewUrlsRef = useRef<Record<string, string>>({});
+  const [previewDocId, setPreviewDocId] = useState<string | null>(null);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imageRotation, setImageRotation] = useState(0);
   const activeClaimType = claimType ?? "GASTOS_MEDICOS";
   const requirements = CLAIM_REQUIREMENTS[activeClaimType];
   const slotHints = {
@@ -77,6 +79,7 @@ export const UploadDocumentsPage: React.FC = () => {
       size: file.size,
       status: "EN_VALIDACION",
       errors: [],
+      validationStartedAt: Date.now(),
       extractedText: getDemoExtractedText(file),
       detectedType: "INDETERMINADO",
       errorDetail: null
@@ -84,7 +87,7 @@ export const UploadDocumentsPage: React.FC = () => {
     dispatch({ type: "ADD_DOCUMENTS", payload: newDocs });
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const pending = documents.filter((d) => d.status === "EN_VALIDACION");
     pending.forEach((doc) => {
       const timeout = setTimeout(() => {
@@ -134,7 +137,7 @@ export const UploadDocumentsPage: React.FC = () => {
     });
   }, [documents, dispatch]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setPreviewUrls((prev) => {
       const next = { ...prev };
       const ids = new Set(documents.map((d) => d.id));
@@ -156,11 +159,11 @@ export const UploadDocumentsPage: React.FC = () => {
     });
   }, [documents]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     previewUrlsRef.current = previewUrls;
   }, [previewUrls]);
 
-  useEffect(
+  React.useEffect(
     () => () => {
       Object.values(previewUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
     },
@@ -178,16 +181,6 @@ export const UploadDocumentsPage: React.FC = () => {
   );
 
   const canContinue = hasFacturaValida && hasMedicoValido && !hasInvalidOrPending;
-
-  useEffect(() => {
-    if (!canContinue) {
-      setInfoMessage(
-        "Para continuar debes tener al menos una factura válida y un informe/receta válido, sin archivos en validación o inválidos."
-      );
-    } else {
-      setInfoMessage(null);
-    }
-  }, [canContinue]);
 
   const grouped = useMemo(() => {
     return {
@@ -207,6 +200,33 @@ export const UploadDocumentsPage: React.FC = () => {
   const facturaAlertMessage = getSectionErrorSummary(facturaInvalid, "Facturas");
   const medicoAlertMessage = getSectionErrorSummary(medicoInvalid, "Informe / receta médica");
   const evidenceAlertMessage = getSectionErrorSummary(evidenceInvalid, "Evidencia adicional");
+  const previewDoc = previewDocId ? documents.find((d) => d.id === previewDocId) ?? null : null;
+  const previewUrl = previewDoc ? previewUrls[previewDoc.id] : undefined;
+  const previewIsImage = !!previewDoc?.file?.type?.startsWith("image/");
+  const previewIsPdf =
+    previewDoc?.file?.type === "application/pdf" || previewDoc?.name.toLowerCase().endsWith(".pdf");
+  const pendingCount = documents.filter((d) => d.status === "EN_VALIDACION").length;
+  const invalidCount = documents.filter((d) => d.status === "INVALIDO").length;
+  const missingFactura = hasFacturaValida ? 0 : 1;
+  const missingMedico = hasMedicoValido ? 0 : 1;
+  const continueHelp = canContinue
+    ? null
+    : pendingCount > 0
+    ? "Estamos terminando la validación de tus archivos."
+    : invalidCount > 0
+    ? "Corrige o elimina los archivos inválidos para continuar."
+    : "Necesitas una factura válida y un informe/receta válido.";
+
+  const openPreview = (doc: WizardDocument) => {
+    setPreviewDocId(doc.id);
+    setImageZoom(1);
+    setImageRotation(0);
+  };
+  const closePreview = () => {
+    setPreviewDocId(null);
+    setImageZoom(1);
+    setImageRotation(0);
+  };
 
   return (
     <Card
@@ -214,7 +234,7 @@ export const UploadDocumentsPage: React.FC = () => {
       description={requirements.description}
     >
       <div className="space-y-5">
-        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-brand-ink">
             {requirements.slots.FACTURA.title} ({requirements.slots.FACTURA.required ? "obligatorio" : "opcional"})
           </h2>
@@ -227,13 +247,14 @@ export const UploadDocumentsPage: React.FC = () => {
                 key={doc.id}
                 doc={doc}
                 previewUrl={previewUrls[doc.id]}
+                onPreview={(selectedDoc) => openPreview(selectedDoc)}
                 onRemove={() => dispatch({ type: "REMOVE_DOCUMENT", payload: { id: doc.id } })}
               />
             ))}
           </div>
         </section>
 
-        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-brand-ink">
             {requirements.slots.INFORME_RECETA.title} ({requirements.slots.INFORME_RECETA.required ? "obligatorio" : "opcional"})
           </h2>
@@ -246,13 +267,14 @@ export const UploadDocumentsPage: React.FC = () => {
                 key={doc.id}
                 doc={doc}
                 previewUrl={previewUrls[doc.id]}
+                onPreview={(selectedDoc) => openPreview(selectedDoc)}
                 onRemove={() => dispatch({ type: "REMOVE_DOCUMENT", payload: { id: doc.id } })}
               />
             ))}
           </div>
         </section>
 
-        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+        <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-brand-ink">
             {requirements.slots.EVIDENCIA_ADICIONAL.title} ({requirements.slots.EVIDENCIA_ADICIONAL.required ? "obligatorio" : "opcional"})
           </h2>
@@ -265,27 +287,100 @@ export const UploadDocumentsPage: React.FC = () => {
                 key={doc.id}
                 doc={doc}
                 previewUrl={previewUrls[doc.id]}
+                onPreview={(selectedDoc) => openPreview(selectedDoc)}
                 onRemove={() => dispatch({ type: "REMOVE_DOCUMENT", payload: { id: doc.id } })}
               />
             ))}
           </div>
         </section>
 
-        {infoMessage && <Alert type="info" message={infoMessage} />}
+        {continueHelp && <Alert type="info" message={continueHelp} />}
 
         <div className="flex items-center justify-between gap-3">
           <Button type="button" variant="secondary" onClick={() => navigate("/wizard/siniestro")}>
             Atrás
           </Button>
-          <Button
-            type="button"
-            disabled={!canContinue}
-            onClick={() => navigate("/wizard/resumen")}
-          >
+          <Button type="button" disabled={!canContinue} onClick={() => navigate("/wizard/resumen")}>
             Continuar
           </Button>
         </div>
       </div>
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-xl border border-brand-border bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-brand-border px-4 py-3">
+              <p className="truncate pr-3 text-sm font-medium text-brand-ink">{previewDoc.name}</p>
+              <div className="flex items-center gap-2">
+                {previewIsImage && (
+                  <>
+                    <button
+                      type="button"
+                      className="rounded-md border border-brand-border px-2 py-1 text-xs text-brand-ink"
+                      onClick={() => setImageZoom((prev) => Math.max(0.6, +(prev - 0.2).toFixed(2)))}
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-md border border-brand-border px-2 py-1 text-xs text-brand-ink"
+                      onClick={() => setImageZoom((prev) => Math.min(3, +(prev + 0.2).toFixed(2)))}
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-md border border-brand-border px-2 py-1 text-xs text-brand-ink"
+                      onClick={() => setImageRotation((prev) => (prev + 90) % 360)}
+                    >
+                      Rotar
+                    </button>
+                  </>
+                )}
+                {previewUrl && (
+                  <button
+                    type="button"
+                    className="rounded-md border border-brand-border px-2 py-1 text-xs text-brand-ink"
+                    onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
+                  >
+                    Abrir
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="rounded-md border border-brand-border px-2 py-1 text-xs text-brand-ink"
+                  onClick={closePreview}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+            <div className="flex max-h-[78vh] items-center justify-center overflow-auto bg-brand-surfaceSoft p-3">
+              {previewIsImage && previewUrl && (
+                <img
+                  src={previewUrl}
+                  alt={`Vista previa de ${previewDoc.name}`}
+                  className="max-h-[74vh] max-w-full object-contain transition-transform duration-150"
+                  style={{ transform: `scale(${imageZoom}) rotate(${imageRotation}deg)` }}
+                />
+              )}
+              {previewIsPdf && previewUrl && (
+                <object
+                  data={`${previewUrl}#page=1&view=FitH`}
+                  type="application/pdf"
+                  className="h-[74vh] w-full rounded-md border border-brand-border bg-white"
+                >
+                  <div className="p-3 text-sm text-brand-muted">
+                    No se pudo previsualizar el PDF.
+                  </div>
+                </object>
+              )}
+              {!previewIsImage && !previewIsPdf && (
+                <div className="p-3 text-sm text-brand-muted">Vista previa no disponible.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

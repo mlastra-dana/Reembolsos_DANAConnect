@@ -26,6 +26,7 @@ export interface WizardDocument {
   size: number;
   status: DocumentStatus;
   errors: string[];
+  validationStartedAt?: number;
   extractedText?: string;
   detectedType?: string;
   errorDetail?: string | null;

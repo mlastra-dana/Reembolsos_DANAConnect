@@ -52,6 +52,12 @@ export const ReviewSubmitPage: React.FC = () => {
     MEDICO: documents.filter((d) => d.category === "MEDICO"),
     EVIDENCIA: documents.filter((d) => d.category === "EVIDENCIA")
   };
+  const completedSteps = [
+    Boolean(claimType) ? "Tipo de siniestro seleccionado" : null,
+    hasFacturaValida ? "Al menos una factura válida" : null,
+    hasMedicoValido ? "Al menos un informe/receta válido" : null,
+    summaryDocs.EVIDENCIA.length > 0 ? "Evidencia adicional cargada" : null
+  ].filter(Boolean) as string[];
 
   return (
     <>
@@ -61,7 +67,7 @@ export const ReviewSubmitPage: React.FC = () => {
         description="Verifica que la información sea correcta antes de enviar el preregistro."
       >
         <div className="space-y-5 text-sm">
-          <section className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+          <section className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
             <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
               Asegurado
             </h2>
@@ -72,7 +78,7 @@ export const ReviewSubmitPage: React.FC = () => {
             </p>
           </section>
 
-          <section className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+          <section className="rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
             <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-muted">
               Tipo de siniestro
             </h2>
@@ -87,7 +93,27 @@ export const ReviewSubmitPage: React.FC = () => {
             </p>
           </section>
 
-          <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4">
+          <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
+              Pasos completados
+            </h2>
+            {completedSteps.length > 0 ? (
+              <ul className="space-y-1">
+                {completedSteps.map((step) => (
+                  <li key={step} className="flex items-center gap-2 text-xs text-brand-ink">
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-success/15 text-[10px] text-success">
+                      ✓
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-brand-muted">Aún no hay pasos completados.</p>
+            )}
+          </section>
+
+          <section className="space-y-2 rounded-xl border border-brand-border bg-brand-surfaceSoft p-4 shadow-sm">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-muted">
               Documentos adjuntos
             </h2>
